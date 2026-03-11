@@ -1,0 +1,72 @@
+---
+title: "Analyzing the Billboard 100"
+author: "Alec Rogers"
+format: html
+execute:
+    echo: false
+---
+
+```{r}
+#| message: false
+library(tidyverse)
+```
+
+
+```{r}
+#| cache: true
+ billboard_clean <- billboard |>
+  filter(wk1 < 101) |>
+  arrange(wk1) |>
+  mutate(improvement = wk1 - wk2, .after = wk2) |>
+  select(artist:improvement) |>
+  rename(week1 = wk1, week2 = wk2)
+```
+
+```{r}
+#| message: false
+
+billboard_clean |>
+  filter(is.finite(improvement)) |>
+  ggplot(aes(x = improvement)) +
+  geom_histogram(binwidth = 5, fill = "green", color = "black") +
+  labs(
+    title = "Distribution of Billboard Rank Improvements\nFrom Week 1 to Week 2",
+    subtitle = "Most songs stayed the same or improved in rank by up to 20 places",
+    caption = "Source: billboard dataset",
+    x = "Song Rank Improvement",
+    y = "Count"
+  ) +
+  theme(
+    plot.title = element_text(size = 11, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 9, hjust = 0.5),
+    plot.caption = element_text(size = 9),
+    axis.title = element_text(size = 11)
+  )
+```
+
+
+```{r}
+#| cache: true
+billboard_longer <- billboard |>
+  pivot_longer(
+    cols = starts_with("wk"),
+    names_to = "week",
+    values_to = "rank"
+  ) |>
+  drop_na(rank) |>
+  mutate(week = parse_number(week))
+```
+
+
+```{r}
+ggplot(billboard_longer, aes(x = week, y = rank)) +
+  geom_line(aes(group = track), alpha = 0.2) +
+  scale_y_reverse() +
+  labs(
+    title = "Billboard Rank of Songs in the Weeks After Release",
+    subtitle = "Most songs rise in popularity within the first 10 weeks",
+    x = "Weeks After Release",
+    y = "Billboard Rank",
+    caption = "Source: billboard dataset"
+  )
+```
